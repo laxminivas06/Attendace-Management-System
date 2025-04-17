@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 220px;
+    background-color: #385f86;
+    padding-top: 60px;
+    color: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar a {
+    display: block;
+    color: white;
+    padding: 15px 20px;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #3a3f44;
+}
+
+.navbar {
+    height: 60px;
+    background-color: #4199bb;
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+.main-content {
+    margin-left: 220px; /* Adjust margin to account for sidebar width */
+    padding: 80px 20px 20px 20px; /* Add padding for the navbar */
+    transition: margin-left 0.3s ease;
+}
+
+h2 {
+    color: #343a40;
+    margin-bottom: 20px;
+}
+
+.day-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+th {
+    background-color: #007bff;
+    color: white;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+.radio-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.save-attendance {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.save-attendance:hover {
+    background-color: #218838;
+}
+
+.save-status {
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.status-indicator.present {
+    background-color: #28a745;
+}
+
+.status-indicator.absent {
+    background-color: #dc3545;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+    
+    .attendance-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .radio-group {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .day-container {
+        padding: 15px 10px;
+    }
+    
+    th, td {
+        padding: 8px;
+        font-size: 14px;
+    }
+    
+    .save-attendance {
+        width: 100%;
+        padding: 12px;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h2>Attendance Management System</h2>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <a href="#" class="dashboard-tab">
+            <i class="fas fa-home"></i>
+            Dashboard Overview</a>
+        <a href="#" class="attendance-tab">
+            <i class="fas fa-calendar-day"></i>
+            Attendance</a>
+        <a href="manage_attendance"> <i class="fas fa-clipboard-list"></i>Manage Attendance</a>
+        <a href="/manage_students"> <i class="fas fa-user-check"></i>Manage Students</a>
+        <a href="/logout"> <i class="fas fa-sign-out"></i>Logout</a>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <!-- Dashboard Overview Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <h2>Welcome to Your Dashboard</h2>
+            <p>This is your main dashboard overview. You can view important statistics and quick links here.</p>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div id="attendance-tab" class="tab-content">
+            <h2>Attendance Management</h2>
+            
+            <div id="attendance-container">
+                {% for day in range(1, 19) %}
+                <div class="day-container">
+                    <h3>Day {{ day }}</h3>
+                    <div class="attendance-form" id="Day{{ day }}">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Present/Absent</th>
+                                    <th>Interaction</th>
+                                    <th>Remarks</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_id, student in students.items() %}
+                                <tr data-student-id="{{ student_id }}">
+                                    <td>{{ student_id }}</td>
+                                    <td>{{ student.name }}</td>
+                                    <td>
+                                        <div class="radio-group">
+                                            <label class="radio-option">
+                                                <input type="radio" name="attendance_{{ day }}_{{ student_id }}" value="present"> Present
+                                            </label>
+                                            <label class="radio-option">
+                                                <input type="radio" name="attendance_{{ day }}_{{ student_id }}" value="absent"> Absent
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="radio-group">
+                                            <label class="radio-option">
+                                                <input type="radio" name="interaction_{{ day }}_{{ student_id }}" value="yes"> Yes
+                                            </label>
+                                            <label class="radio-option">
+                                                <input type="radio" name="interaction_{{ day }}_{{ student_id }}" value="no"> No
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="remarks_{{ day }}_{{ student_id }}" placeholder="Remarks (optional)">
+                                    </td>
+                                    <td class="status-cell">
+                                        <!-- Status indicator will appear here -->
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button class="save-attendance" data-day="{{ day }}">Save Attendance</button>
+                        <span class="save-status" id="save-status-{{ day }}"></span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768) {
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isClickOnMenuToggle = menuToggle.contains(event.target);
+                
+                if (!isClickInsideSidebar && !isClickOnMenuToggle && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+        
+        // Tab switching functionality
+        document.querySelector('.attendance-tab').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById('attendance-tab').classList.add('active');
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    
+        document.querySelector('.dashboard-tab').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById('dashboard-tab').classList.add('active');
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    
+        // Save attendance handler
+        document.querySelectorAll('.save-attendance').forEach(button => {
+            button.addEventListener('click', async function() {
+                const day = this.getAttribute('data-day');
+                const button = this;
+                const statusElement = document.getElementById(`save-status-${day}`);
+                
+                button.disabled = true;
+                button.textContent = 'Saving...';
+                statusElement.textContent = '';
+                statusElement.style.color = '';
+                
+                const attendanceData = {
+                    day: `Day${day}`,
+                    students: {}
+                };
+    
+                const rows = document.querySelectorAll(`#Day${day} tbody tr`);
+                let hasValidData = false;
+                
+                rows.forEach(row => {
+                    const studentId = row.getAttribute('data-student-id');
+                    const attendanceRadio = row.querySelector(`input[name="attendance_${day}_${studentId}"]:checked`);
+                    const interactionRadio = row.querySelector(`input[name="interaction_${day}_${studentId}"]:checked`);
+                    const remarksInput = row.querySelector(`input[name="remarks_${day}_${studentId}"]`);
+                    
+                    // Only include students with both radio buttons selected
+                    if (attendanceRadio && interactionRadio) {
+                        hasValidData = true;
+                        
+                        attendanceData.students[studentId] = {
+                            status: attendanceRadio.value,
+                            interaction: interactionRadio.value,
+                            remarks: remarksInput ? remarksInput.value : '' // Remarks are optional
+                        };
+                        
+                        // Update status indicator immediately for better UX
+                        const statusCell = row.querySelector('.status-cell');
+                        if (statusCell) {
+                            statusCell.innerHTML = `<span class="status-indicator ${attendanceRadio.value}" title="Saving..."></span>`;
+                        }
+                    }
+                });
+    
+                if (!hasValidData) {
+                    statusElement.textContent = 'No valid student data to save';
+                    statusElement.style.color = 'orange';
+                    button.disabled = false;
+                    button.textContent = 'Save Attendance';
+                    return;
+                }
+    
+                try {
+                    const response = await fetch('/save_attendance', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(attendanceData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        statusElement.textContent = `Saved ${Object.keys(attendanceData.students).length} student(s) successfully!`;
+                        statusElement.style.color = 'green';
+                        
+                        // Update status indicators with saved time
+                        rows.forEach(row => {
+                            const studentId = row.getAttribute('data-student-id');
+                            if (attendanceData.students[studentId]) {
+                                const status = attendanceData.students[studentId].status;
+                                const statusCell = row.querySelector('.status-cell');
+                                if (statusCell) {
+                                    statusCell.innerHTML = `<span class="status-indicator ${status}" title="Saved at ${new Date().toLocaleTimeString()}"></span>`;
+                                }
+                            }
+                        });
+                    } else {
+                        statusElement.textContent = 'Error: ' + (data.error || 'Unknown error');
+                        statusElement.style.color = 'red';
+                        
+                        // Reset status indicators if save failed
+                        rows.forEach(row => {
+                            const studentId = row.getAttribute('data-student-id');
+                            if (attendanceData.students[studentId]) {
+                                const statusCell = row.querySelector('.status-cell');
+                                if (statusCell) {
+                                    statusCell.innerHTML = '';
+                                }
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    statusElement.textContent = 'Failed to save attendance';
+                    statusElement.style.color = 'red';
+                    
+                    // Reset status indicators if error occurred
+                    rows.forEach(row => {
+                        const studentId = row.getAttribute('data-student-id');
+                        if (attendanceData.students[studentId]) {
+                            const statusCell = row.querySelector('.status-cell');
+                            if (statusCell) {
+                                statusCell.innerHTML = '';
+                            }
+                        }
+                    });
+                } finally {
+                    button.disabled = false;
+                    button.textContent = 'Save Attendance';
+                }
+            });
+        });
+    
+        // Load saved attendance when attendance tab is clicked
+        document.querySelector('.attendance-tab').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/load_attendance');
+                const attendanceData = await response.json();
+                
+                if (attendanceData) {
+                    Object.entries(attendanceData).forEach(([dayKey, dayData]) => {
+                        if (dayData && dayData.students) {
+                            const dayNumber = dayKey.replace('Day', '');
+                            
+                            Object.entries(dayData.students).forEach(([studentId, studentData]) => {
+                                const row = document.querySelector(`#Day${dayNumber} tr[data-student-id="${studentId}"]`);
+                                
+                                if (row) {
+                                    const attendanceRadio = row.querySelector(`input[name="attendance_${dayNumber}_${studentId}"][value="${studentData.status}"]`);
+                                    if (attendanceRadio) attendanceRadio.checked = true;
+                                    
+                                    const interactionRadio = row.querySelector(`input[name="interaction_${dayNumber}_${studentId}"][value="${studentData.interaction}"]`);
+                                    if (interactionRadio) interactionRadio.checked = true;
+                                    
+                                    const remarksInput = row.querySelector(`input[name="remarks_${dayNumber}_${studentId}"]`);
+                                    if (remarksInput && studentData.remarks) {
+                                        remarksInput.value = studentData.remarks;
+                                    }
+                                    
+                                    const statusCell = row.querySelector('.status-cell');
+                                    if (statusCell) {
+                                        statusCell.innerHTML = `<span class="status-indicator ${studentData.status}" title="Previously saved"></span>`;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+            }
+        });
+    
+        // Handle window resize to adjust layout
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+
+    
+</body>
+</html>
